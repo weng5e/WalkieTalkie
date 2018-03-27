@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "karma start ClientApp/test/karma.conf.js"
+    "test": "karma start ClientApp/test/karma.conf.js",
+    "build": "webpack",
+    "recreat-vendor": "webpack --config webpack.config.vendor.js"
   },
   "devDependencies": {
     "@angular/animations": "4.2.5",
@@ -55,6 +57,7 @@
     "typescript": "2.4.1",
     "url-loader": "0.5.9",
     "webpack": "2.5.1",
+    "webpack-cli": "^2.0.13",
     "webpack-hot-middleware": "2.18.2",
     "webpack-merge": "4.1.0",
     "zone.js": "0.8.12"
