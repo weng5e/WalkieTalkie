@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
 
 @Component({
     selector: 'talk-box',
@@ -6,6 +7,11 @@ import { Component } from '@angular/core';
 })
 export class TalkBoxComponent {
     public isTalking: boolean = false;
+
+    constructor() {
+        this.audioHelper = new AudioHelper();
+        this.audioHelper.setUp();
+    }
 
     public toggleTalking(): void {
         if (this.isTalking) {
@@ -18,10 +24,14 @@ export class TalkBoxComponent {
 
     private startTalking(): void {
         this.isTalking = true;
+        this.audioHelper.record();
     }
 
     private stopTalking(): void {
         this.isTalking = false;
+        this.audioHelper.stop();
     }
+
+    private audioHelper: AudioHelper;
 
 }
