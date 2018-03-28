@@ -1,3 +1,6 @@
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API#Basic_app_setup
 
 declare var MediaRecorder: any;
@@ -6,6 +9,7 @@ export class AudioHelper {
 
     constructor() {
         this._isAudioAvailable = this.isAPIAvailable();
+        this.recordsStream = new Subject();
     }
 
     public get isAudioAvailable(): boolean {
@@ -33,6 +37,8 @@ export class AudioHelper {
                     audio.src = window.URL.createObjectURL(blob);
                     audio.load();
                     audio.play();
+
+                    this.recordsStream.next(blob);
                 };
                 this._mediaRecorder.ondataavailable = (e: any) => this._chunks.push(e.data);
             })
@@ -41,7 +47,7 @@ export class AudioHelper {
             });
     }
 
-    public record() {
+    public record(): void {
         if (this._isRecording) {
             console.log('Recorder is already recording.');
             return;
@@ -60,6 +66,8 @@ export class AudioHelper {
         this._isRecording = false;
         this._mediaRecorder.stop();
     }
+
+    public readonly recordsStream: Subject<any>;
 
     private isAPIAvailable(): boolean {
         return navigator.mediaDevices !== null && navigator.mediaDevices.getUserMedia !== null;
