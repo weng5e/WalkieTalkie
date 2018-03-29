@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ViewChild, ElementRef } from '@angular/core';
 import { Http } from '@angular/http';
 import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
 
@@ -7,7 +7,14 @@ import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
     templateUrl: './talk-box.component.html'
 })
 export class TalkBoxComponent {
+    private audioHelper: AudioHelper;
+    private http: Http;
+    private baseUrl: string;
+    private results: string[] = [];
+
     public isTalking: boolean = false;
+
+    @ViewChild('audioFileInput') audioFileInput: ElementRef;
 
     constructor(http: Http, @Inject('BASE_URL') baseUrl: string) {
         this.http = http;
@@ -25,8 +32,10 @@ export class TalkBoxComponent {
 
             this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
                 console.log(res);
+                this.appendResults(res);
             }, err => {
                 console.log(err);
+                this.appendResults(err);
             });
         })
     }
@@ -40,6 +49,28 @@ export class TalkBoxComponent {
         }
     }
 
+    public uploadAudioFile(): void {
+        let fi = this.audioFileInput.nativeElement;
+        if (fi.files && fi.files[0]) {
+            let fileToUpload = fi.files[0];
+
+            let formData = new FormData();
+            formData.append("audioFile", fileToUpload);
+
+            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
+                console.log(res);
+                this.appendResults(res);
+            }, err => {
+                console.log(err);
+                this.appendResults(err);
+            });
+        }
+    }
+
+    private appendResults(res: any) {
+        this.results.push(JSON.stringify(res.json(), null, 4));
+    }
+
     private startTalking(): void {
         this.isTalking = true;
         this.audioHelper.record();
@@ -49,9 +80,5 @@ export class TalkBoxComponent {
         this.isTalking = false;
         this.audioHelper.stop();
     }
-
-    private audioHelper: AudioHelper;
-    private http: Http;
-    private baseUrl: string;
 
 }

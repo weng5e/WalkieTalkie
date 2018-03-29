@@ -1,7 +1,26 @@
-<h1>Talk box</h1>
+<div>
+    <h1>Talk box</h1>
 
-<p>Is talking:
-    <strong>{{ isTalking }}</strong>
-</p>
+    <p>Is talking:
+        <strong>{{ isTalking }}</strong>
+    </p>
 
-<button (click)="toggleTalking()">Talk</button>
+    <button (click)="toggleTalking()">Talk</button>
+</div>
+
+<div>
+    <h1>Audio file upload</h1>
+    <input #audioFileInput type="file">
+    <button (click)="uploadAudioFile()">Upload</button>
+</div>
+
+<div>
+    <h1>Recognition History</h1>
+    <div>
+        <ul>
+            <li *ngFor="let result of results">
+                {{result}}
+            </li>
+        </ul>
+    </div>
+</div>
