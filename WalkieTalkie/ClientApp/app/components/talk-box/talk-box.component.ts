@@ -21,6 +21,7 @@ export class TalkBoxComponent {
             audio.play();
 
             let formData = new FormData();
+            formData.append("audioFile", blob);
 
             this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
                 console.log(res);

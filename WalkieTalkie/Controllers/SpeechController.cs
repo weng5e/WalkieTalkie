@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OxfordSpeechClient;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,20 +12,32 @@ namespace WalkieTalkie.Controllers
     [Route("api/[controller]")]
     public class SpeechController : Controller
     {
+        private readonly ISpeechRecognitionService _speechRecognitionService;
+
+        public SpeechController(ISpeechRecognitionService speechRecognitionService)
+        {
+            _speechRecognitionService = speechRecognitionService;
+        }
+
         // POST /api/Speech/ASR
         [HttpPost("[action]")]
-        public async Task<string> ASR(IFormFile audioFile)
+        public async Task<object> ASR(IFormFile audioFile)
         {
 
-            // full path to file in temp location
-            var filePath = Path.GetTempFileName();
+            //// full path to file in temp location
+            //var filePath = Path.GetTempFileName();
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            //using (var stream = new FileStream(filePath, FileMode.Create))
+            //{
+            //    await audioFile.CopyToAsync(stream);
+            //}
+
+            using (var ms = new MemoryStream())
             {
-                await audioFile.CopyToAsync(stream);
+                await audioFile.CopyToAsync(ms);
+                var result = await _speechRecognitionService.RecognizeSpeechAsync(ms).ConfigureAwait(false);
+                return result;
             }
-
-            return "result";
         }
     }
 }
