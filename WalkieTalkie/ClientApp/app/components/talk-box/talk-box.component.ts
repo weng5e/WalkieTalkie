@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
+import { Http } from '@angular/http';
 import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
 
 @Component({
@@ -8,9 +9,25 @@ import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
 export class TalkBoxComponent {
     public isTalking: boolean = false;
 
-    constructor() {
+    constructor(http: Http, @Inject('BASE_URL') baseUrl: string) {
+        this.http = http;
+        this.baseUrl = baseUrl;
         this.audioHelper = new AudioHelper();
         this.audioHelper.setUp();
+        this.audioHelper.recordsStream.subscribe((blob: any) => {
+            const audio = new Audio();
+            audio.src = window.URL.createObjectURL(blob);
+            audio.load();
+            audio.play();
+
+            let formData = new FormData();
+
+            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
+                console.log(res);
+            }, err => {
+                console.log(err);
+            });
+        })
     }
 
     public toggleTalking(): void {
@@ -33,5 +50,7 @@ export class TalkBoxComponent {
     }
 
     private audioHelper: AudioHelper;
+    private http: Http;
+    private baseUrl: string;
 
 }

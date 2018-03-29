@@ -31,12 +31,8 @@ export class AudioHelper {
             .then((stream) => {
                 this._mediaRecorder = new MediaRecorder(stream);
                 this._mediaRecorder.onstop = (e: any) => {
-                    const audio = new Audio();
-                    const blob = new Blob(this._chunks, { 'type': 'audio/ogg; codecs=opus' });
+                    const blob = new Blob(this._chunks, { 'type': 'audio/webm; codecs=opus' });
                     this._chunks.length = 0;
-                    audio.src = window.URL.createObjectURL(blob);
-                    audio.load();
-                    audio.play();
 
                     this.recordsStream.next(blob);
                 };
