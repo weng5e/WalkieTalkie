@@ -35,7 +35,7 @@ namespace WalkieTalkie.Controllers
             using (var ms = new MemoryStream())
             {
                 await audioFile.CopyToAsync(ms);
-                var result = await _speechRecognitionService.RecognizeSpeechAsync(ms).ConfigureAwait(false);
+                var result = await _speechRecognitionService.RecognizeSpeechAsync(ms);
                 return result;
             }
         }

@@ -40,6 +40,8 @@ namespace OxfordSpeechClient
 
             int bytesRead = 0;
             byte[] buffer = new byte[1024];
+            // Set the position to the beginning of the stream.
+            audioStream.Seek(0, SeekOrigin.Begin);
 
             try
             {
