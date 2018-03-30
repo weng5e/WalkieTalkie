@@ -48,14 +48,6 @@ export class RecorderJS {
         let audioContext = source.context;
         this.sampleRate = audioContext.sampleRate;
 
-        // var options = {
-        //     numberOfInputs: 2
-        // }
-
-        //   audioContext.createChannelMerger(1)
-        //   var myMerger = new ChannelMergerNode(audioContext, options);
-
-        // Set the output channel number to 1. We only want mono audio.
         let scriptNode = audioContext.createScriptProcessor(defaultConfig.bufferLen, this.inputChannelNumber, defaultConfig.numOutputChannels);
 
         scriptNode.onaudioprocess = (audioProcessingEvent) => {
@@ -65,9 +57,12 @@ export class RecorderJS {
 
             for (let i = 0; i < that.inputChannelNumber; i++) {
                 let channelData = audioProcessingEvent.inputBuffer.getChannelData(i);
-                that.buffers[i].push(channelData);
+                let clone = new Float32Array(channelData.length);
+                clone.set(channelData);
+
+                that.buffers[i].push(clone);
                 if (i === 0) {
-                    that.resultLength += channelData.length;
+                    that.resultLength += clone.length;
                 }
             }
         }
