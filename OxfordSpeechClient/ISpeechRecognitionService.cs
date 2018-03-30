@@ -10,6 +10,6 @@ namespace OxfordSpeechClient
 {
     public interface ISpeechRecognitionService : IDisposable
     {
-        Task<RecognitionResult> RecognizeSpeechAsync(Stream audioStream, CancellationToken token = default(CancellationToken));
+        Task<SpeechRecognitionResult> RecognizeSpeechAsync(Stream audioStream, CancellationToken token = default(CancellationToken));
     }
 }

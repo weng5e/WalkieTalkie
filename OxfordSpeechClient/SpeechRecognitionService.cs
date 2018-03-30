@@ -18,24 +18,24 @@ namespace OxfordSpeechClient
 
         }
 
-        public async Task<RecognitionResult> RecognizeSpeechAsync(Stream audioStream, CancellationToken token = default(CancellationToken))
+        public async Task<SpeechRecognitionResult> RecognizeSpeechAsync(Stream audioStream, CancellationToken token = default(CancellationToken))
         {
-            using (var _client = SpeechRecognitionServiceFactory.CreateDataClient(SpeechRecognitionMode.ShortPhrase,
+            using (var client = SpeechRecognitionServiceFactory.CreateDataClient(SpeechRecognitionMode.ShortPhrase,
                                                                                  "en-us",
                                                                                  _options.PrimaryKey,
                                                                                  _options.SecondaryKey,
                                                                                  _options.ServiceUrl))
             {
-                _client.AuthenticationUri = _options.AuthenticationUrl;
+                client.AuthenticationUri = _options.AuthenticationUrl;
 
-                var tcs = new TaskCompletionSource<RecognitionResult>();
+                var tcs = new TaskCompletionSource<SpeechRecognitionResult>();
 
-                _client.OnResponseReceived += (sender, e) =>
+                client.OnResponseReceived += (sender, e) =>
                 {
-                    tcs.TrySetResult(e.PhraseResponse);
+                    tcs.TrySetResult(SpeechRecognitionResult.FromCrisResult(e.PhraseResponse));
                 };
 
-                _client.OnConversationError += (sender, e) =>
+                client.OnConversationError += (sender, e) =>
                 {
                     tcs.TrySetException(new InvalidOperationException(e.SpeechErrorText));
                 };
@@ -50,13 +50,13 @@ namespace OxfordSpeechClient
                     do
                     {
                         bytesRead = audioStream.Read(buffer, 0, buffer.Length);
-                        _client.SendAudio(buffer, bytesRead);
+                        client.SendAudio(buffer, bytesRead);
                     }
                     while (bytesRead > 0 && !token.IsCancellationRequested);
                 }
                 finally
                 {
-                    _client.EndAudio();
+                    client.EndAudio();
                     var forgot = Task.Run(async () =>
                     {
                         await Task.Delay(TimeSpan.FromSeconds(60));
