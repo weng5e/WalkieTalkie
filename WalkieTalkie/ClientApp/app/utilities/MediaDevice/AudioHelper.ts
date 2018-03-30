@@ -1,9 +1,11 @@
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 
+import { RecorderJS } from "./RecorderJS";
+
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API#Basic_app_setup
 
-declare var MediaRecorder: any;
+// declare var MediaRecorder: any;
 
 export class AudioHelper {
 
@@ -22,27 +24,42 @@ export class AudioHelper {
             return;
         }
 
-        if (this._mediaRecorder !== null) {
-            console.log('Recorder already set up.');
-            return;
-        }
+        // if (this._mediaRecorder !== null) {
+        //     console.log('Recorder already set up.');
+        //     return;
+        // }
 
-        if (!MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
-            console.log('<audio/webm;codecs=pcm> is not supported');
-            return;
-        }
+        // if (!MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
+        //     console.log('<audio/webm;codecs=pcm> is not supported');
+        //     return;
+        // }
+
+        let that = this;
 
         navigator.mediaDevices.getUserMedia(AudioHelper._audioConstraints)
             .then((stream) => {
-                let options = { mimeType: 'audio/webm' };
-                this._mediaRecorder = new MediaRecorder(stream, options);
-                this._mediaRecorder.onstop = (e: any) => {
-                    const blob = new Blob(this._chunks, { 'type': 'audio/webm' });
-                    this._chunks.length = 0;
+                that._audioStream = stream;
+                let audioContext = new AudioContext();
+                let recordingAudioSource = audioContext.createGain();
+                let mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
+                mediaStreamSourceNode.connect(recordingAudioSource);
 
-                    this.recordsStream.next(blob);
-                };
-                this._mediaRecorder.ondataavailable = (e: any) => this._chunks.push(e.data);
+                that._recorder.setUp(recordingAudioSource);
+
+                // recordingAudioSource.context
+
+                // const options = {
+                //     mimeType: 'audio/webm;codecs=pcm'
+                // };
+                // this._mediaRecorder = new MediaRecorder(stream, options);
+                // this._mediaRecorder.onstop = (e: any) => {
+                //     const blob = new Blob(this._chunks, { 'type': 'audio/webm;codecs=pcm' });
+                //     this._chunks.length = 0;
+
+                //     this.recordsStream.next(blob);
+                // };
+                // this._mediaRecorder.ondataavailable = (e: any) => this._chunks.push(e.data);
+
             })
             .catch((err) => {
                 console.log('The following getUserMedia error occured: ' + err);
@@ -56,7 +73,8 @@ export class AudioHelper {
         }
 
         this._isRecording = true;
-        this._mediaRecorder.start();
+        this._recorder.start();
+        // this._mediaRecorder.start();
     }
 
     public stop() {
@@ -66,7 +84,12 @@ export class AudioHelper {
         }
 
         this._isRecording = false;
-        this._mediaRecorder.stop();
+        this._recorder.stop();
+
+        let audioBlob = this._recorder.exportWAV();
+        this.recordsStream.next(audioBlob);
+
+        // this._mediaRecorder.stop();
     }
 
     public readonly recordsStream: Subject<any>;
@@ -78,8 +101,11 @@ export class AudioHelper {
     private readonly _isAudioAvailable: boolean = false;
 
     private _isRecording: boolean = false;
-    private _chunks: any = [];
-    private _mediaRecorder: any = null;
+    private _recorder: RecorderJS = new RecorderJS();
+    private _audioStream?: MediaStream;
+
+    // private _chunks: any = [];
+    // private _mediaRecorder: any = null;
 
     private static readonly _audioConstraints = { audio: true };
 }
