@@ -27,11 +27,17 @@ export class AudioHelper {
             return;
         }
 
+        if (!MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
+            console.log('<audio/webm;codecs=pcm> is not supported');
+            return;
+        }
+
         navigator.mediaDevices.getUserMedia(AudioHelper._audioConstraints)
             .then((stream) => {
-                this._mediaRecorder = new MediaRecorder(stream);
+                let options = { mimeType: 'audio/webm;codecs=pcm' };
+                this._mediaRecorder = new MediaRecorder(stream, options);
                 this._mediaRecorder.onstop = (e: any) => {
-                    const blob = new Blob(this._chunks, { 'type': 'audio/webm; codecs=opus' });
+                    const blob = new Blob(this._chunks, { 'type': 'audio/webm;codecs=pcm' });
                     this._chunks.length = 0;
 
                     this.recordsStream.next(blob);
