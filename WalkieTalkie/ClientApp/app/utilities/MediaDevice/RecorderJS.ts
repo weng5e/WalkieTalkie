@@ -22,7 +22,8 @@ DEALINGS IN THE SOFTWARE.
 
 const defaultConfig = {
     bufferLen: 4096,
-    mimeType: 'audio/wav;codecs=pcm'
+    mimeType: 'audio/wav',
+    numOutputChannels: 2
 };
 
 export class RecorderJS {
@@ -30,7 +31,7 @@ export class RecorderJS {
     private sampleRate: number = 0;
 
     private recording: boolean = false;
-    private buffer: Float32Array[] = [];
+    private buffers: Float32Array[][] = [];
     private resultLength = 0;
 
     constructor() {
@@ -38,6 +39,8 @@ export class RecorderJS {
     }
 
     public setUp(source: GainNode) {
+        this.initBuffers();
+
         let that = this;
 
         this.inputChannelNumber = source.channelCount;
@@ -45,27 +48,34 @@ export class RecorderJS {
         let audioContext = source.context;
         this.sampleRate = audioContext.sampleRate;
 
-        // Set the output channel number to 1. We only want mono audio.
-        let scriptNode = audioContext.createScriptProcessor(defaultConfig.bufferLen, this.inputChannelNumber, 1);
+        let scriptNode = audioContext.createScriptProcessor(defaultConfig.bufferLen, this.inputChannelNumber, defaultConfig.numOutputChannels);
 
         scriptNode.onaudioprocess = (audioProcessingEvent) => {
             if (!that.recording) {
                 return;
             }
 
-            // Only keep the left channel (sound track).
-            let leftChannelData = audioProcessingEvent.inputBuffer.getChannelData(0);
-            that.buffer.push(leftChannelData);
-            that.resultLength += leftChannelData.length;
+            for (let i = 0; i < that.inputChannelNumber; i++) {
+                let channelData = audioProcessingEvent.inputBuffer.getChannelData(i);
+                let clone = new Float32Array(channelData.length);
+                clone.set(channelData);
+
+                that.buffers[i].push(clone);
+                if (i === 0) {
+                    that.resultLength += clone.length;
+                }
+            }
         }
+
+        source.connect(scriptNode);
+        scriptNode.connect(audioContext.destination);
 
     }
 
     public start(): void {
         if (!this.recording) {
             this.recording = true;
-            this.buffer = [];
-            this.resultLength = 0;
+            this.initBuffers();
         }
     }
 
@@ -75,19 +85,55 @@ export class RecorderJS {
         }
     }
 
-    public exportWAV(): Blob {
-        let allAudioData = this.mergeBuffers();
-        let dataview = this.encodeWAV(allAudioData);
+    public exportWAV() {
+        if (this.resultLength === 0) return null;
+
+        let mergedChannelData: Float32Array[] = [];
+        for (let i = 0; i < this.inputChannelNumber; i++) {
+            mergedChannelData.push(this.mergeBuffers(i));
+        }
+
+        let interleaved;
+        if (this.inputChannelNumber === 2) {
+            interleaved = this.interleave(mergedChannelData[0], mergedChannelData[1]);
+        } else {
+            interleaved = mergedChannelData[0];
+        }
+
+        let dataview = this.encodeWAV(interleaved);
         let audioBlob = new Blob([dataview], { type: defaultConfig.mimeType });
-        return audioBlob;
+
+        let result = {
+            sampleRate: this.sampleRate,
+            channelCount: 1,
+            blob: audioBlob
+        };
+
+        return result;
     }
 
-    private mergeBuffers(): Float32Array {
+    private mergeBuffers(channelNumber: number): Float32Array {
         let result = new Float32Array(this.resultLength);
         let idx = 0;
-        for (let i = 0; i < this.buffer.length; i++) {
-            result.set(this.buffer[i], idx);
-            idx += this.buffer[i].length;
+        let buff = this.buffers[channelNumber];
+        for (let i = 0; i < buff.length; i++) {
+            result.set(buff[i], idx);
+            idx += buff[i].length;
+        }
+        return result;
+    }
+
+    private interleave(inputL: Float32Array, inputR: Float32Array) {
+        let length = inputL.length + inputR.length;
+        let result = new Float32Array(length);
+
+        let index = 0,
+            inputIndex = 0;
+
+        while (index < length) {
+            result[index++] = inputL[inputIndex];
+            result[index++] = inputR[inputIndex];
+            inputIndex++;
         }
         return result;
     }
@@ -109,13 +155,13 @@ export class RecorderJS {
         /* sample format (raw) */
         view.setUint16(20, 1, true);
         /* channel count */
-        view.setUint16(22, 1, true);
+        view.setUint16(22, defaultConfig.numOutputChannels, true);
         /* sample rate */
         view.setUint32(24, this.sampleRate, true);
         /* byte rate (sample rate * block align) */
         view.setUint32(28, this.sampleRate * 4, true);
         /* block align (channel count * bytes per sample) */
-        view.setUint16(32, 2, true);
+        view.setUint16(32, defaultConfig.numOutputChannels * 2, true);
         /* bits per sample */
         view.setUint16(34, 16, true);
         /* data chunk identifier */
@@ -138,6 +184,14 @@ export class RecorderJS {
         for (let i = 0; i < input.length; i++ , offset += 2) {
             let s = Math.max(-1, Math.min(1, input[i]));
             output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+    }
+
+    private initBuffers() {
+        this.buffers = [];
+        this.resultLength = 0;
+        for (let channel = 0; channel < this.inputChannelNumber; channel++) {
+            this.buffers[channel] = [];
         }
     }
 }

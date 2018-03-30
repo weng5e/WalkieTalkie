@@ -5,61 +5,38 @@ import { RecorderJS } from "./RecorderJS";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API/Using_the_MediaStream_Recording_API#Basic_app_setup
 
-// declare var MediaRecorder: any;
-
 export class AudioHelper {
+    private audioContext: AudioContext;
+
+    private isRecording: boolean = false;
+    private recorder: RecorderJS = new RecorderJS();
+    private audioStream?: MediaStream;
+
+    private static readonly _audioConstraints = { audio: true };
+
+    public readonly recordsStream: Subject<any>;
 
     constructor() {
-        this._isAudioAvailable = this.isAPIAvailable();
         this.recordsStream = new Subject();
-    }
-
-    public get isAudioAvailable(): boolean {
-        return this._isAudioAvailable;
+        this.audioContext = new AudioContext();
     }
 
     public setUp() {
-        if (!this._isAudioAvailable) {
+        if (!this.isAPIAvailable()) {
             console.log('getUserMedia not supported on your browser!');
             return;
         }
-
-        // if (this._mediaRecorder !== null) {
-        //     console.log('Recorder already set up.');
-        //     return;
-        // }
-
-        // if (!MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
-        //     console.log('<audio/webm;codecs=pcm> is not supported');
-        //     return;
-        // }
 
         let that = this;
 
         navigator.mediaDevices.getUserMedia(AudioHelper._audioConstraints)
             .then((stream) => {
-                that._audioStream = stream;
-                let audioContext = new AudioContext();
-                let recordingAudioSource = audioContext.createGain();
-                let mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
-                mediaStreamSourceNode.connect(recordingAudioSource);
+                that.audioStream = stream;
+                let gainNode = this.audioContext.createGain();
+                let audioSourceNode = that.audioContext.createMediaStreamSource(stream);
 
-                that._recorder.setUp(recordingAudioSource);
-
-                // recordingAudioSource.context
-
-                // const options = {
-                //     mimeType: 'audio/webm;codecs=pcm'
-                // };
-                // this._mediaRecorder = new MediaRecorder(stream, options);
-                // this._mediaRecorder.onstop = (e: any) => {
-                //     const blob = new Blob(this._chunks, { 'type': 'audio/webm;codecs=pcm' });
-                //     this._chunks.length = 0;
-
-                //     this.recordsStream.next(blob);
-                // };
-                // this._mediaRecorder.ondataavailable = (e: any) => this._chunks.push(e.data);
-
+                audioSourceNode.connect(gainNode);
+                that.recorder.setUp(gainNode);
             })
             .catch((err) => {
                 console.log('The following getUserMedia error occured: ' + err);
@@ -67,45 +44,34 @@ export class AudioHelper {
     }
 
     public record(): void {
-        if (this._isRecording) {
+        if (this.isRecording) {
             console.log('Recorder is already recording.');
             return;
         }
 
-        this._isRecording = true;
-        this._recorder.start();
-        // this._mediaRecorder.start();
+        this.isRecording = true;
+        this.recorder.start();
     }
 
     public stop() {
-        if (!this._isRecording) {
+        if (!this.isRecording) {
             console.log('Recorder is already NOT recording.');
             return;
         }
 
-        this._isRecording = false;
-        this._recorder.stop();
+        this.isRecording = false;
+        this.recorder.stop();
 
-        let audioBlob = this._recorder.exportWAV();
-        this.recordsStream.next(audioBlob);
+        let audioBlob = this.recorder.exportWAV();
+        if (audioBlob !== null) {
+            this.recordsStream.next(audioBlob);
+        }
 
-        // this._mediaRecorder.stop();
     }
 
-    public readonly recordsStream: Subject<any>;
 
     private isAPIAvailable(): boolean {
         return navigator.mediaDevices !== null && navigator.mediaDevices.getUserMedia !== null;
     }
 
-    private readonly _isAudioAvailable: boolean = false;
-
-    private _isRecording: boolean = false;
-    private _recorder: RecorderJS = new RecorderJS();
-    private _audioStream?: MediaStream;
-
-    // private _chunks: any = [];
-    // private _mediaRecorder: any = null;
-
-    private static readonly _audioConstraints = { audio: true };
 }
