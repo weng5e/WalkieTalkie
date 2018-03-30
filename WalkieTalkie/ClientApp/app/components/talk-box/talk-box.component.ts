@@ -21,22 +21,22 @@ export class TalkBoxComponent {
         this.baseUrl = baseUrl;
         this.audioHelper = new AudioHelper();
         this.audioHelper.setUp();
-        this.audioHelper.recordsStream.subscribe((blob: any) => {
+        this.audioHelper.recordsStream.subscribe((data: any) => {
             const audio = new Audio();
-            audio.src = window.URL.createObjectURL(blob);
+            audio.src = window.URL.createObjectURL(data.blob);
             audio.load();
             audio.play();
 
             let formData = new FormData();
-            formData.append("audioFile", blob);
+            formData.append("audioFile", data.blob);
 
-            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
-                console.log(res);
-                this.appendResults(res);
-            }, err => {
-                console.log(err);
-                this.appendResults(err);
-            });
+            // this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
+            //     console.log(res);
+            //     this.appendResults(res);
+            // }, err => {
+            //     console.log(err);
+            //     this.appendResults(err);
+            // });
         })
     }
 
