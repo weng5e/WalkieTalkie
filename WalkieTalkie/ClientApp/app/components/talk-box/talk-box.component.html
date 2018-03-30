@@ -1,17 +1,27 @@
 <div>
     <h1>Talk box</h1>
-
-    <p>Is talking:
-        <strong>{{ isTalking }}</strong>
-    </p>
-
-    <button (click)="toggleTalking()">Talk</button>
 </div>
 
-<div>
-    <h1>Audio file upload</h1>
-    <input #audioFileInput type="file">
-    <button (click)="uploadAudioFile()">Upload</button>
+<div *ngIf="!recognizing">
+    <div>
+        <h2>Get audio from your microphone.</h2>
+
+        <p>Is talking:
+            <strong>{{ isTalking }}</strong>
+        </p>
+
+        <button (click)="toggleTalking()">Talk</button>
+    </div>
+
+    <div>
+        <h2>Audio file upload</h2>
+        <input #audioFileInput type="file">
+        <button (click)="uploadAudioFile()">Upload</button>
+    </div>
+</div>
+
+<div *ngIf="recognizing">
+    <h2>Magic is happening ...</h2>
 </div>
 
 <div>

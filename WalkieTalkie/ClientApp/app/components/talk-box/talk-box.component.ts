@@ -11,6 +11,7 @@ export class TalkBoxComponent {
     private http: Http;
     private baseUrl: string;
     private results: string[] = [];
+    private recognizing: boolean = false;
 
     public isTalking: boolean = false;
 
@@ -27,16 +28,7 @@ export class TalkBoxComponent {
             audio.load();
             audio.play();
 
-            let formData = new FormData();
-            formData.append("audioFile", data.blob);
-
-            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
-                console.log(res);
-                this.appendResults(res);
-            }, err => {
-                console.log(err);
-                this.appendResults(err);
-            });
+            this.postBlobToRecognize(data.blob);
         })
     }
 
@@ -54,17 +46,25 @@ export class TalkBoxComponent {
         if (fi.files && fi.files[0]) {
             let fileToUpload = fi.files[0];
 
-            let formData = new FormData();
-            formData.append("audioFile", fileToUpload);
-
-            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
-                console.log(res);
-                this.appendResults(res);
-            }, err => {
-                console.log(err);
-                this.appendResults(err);
-            });
+            this.postBlobToRecognize(fileToUpload);
         }
+    }
+
+    private postBlobToRecognize(blob: any) {
+        let formData = new FormData();
+        formData.append("audioFile", blob);
+
+        this.recognizing = true;
+
+        this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
+            this.recognizing = false;
+            console.log(res);
+            this.appendResults(res);
+        }, err => {
+            this.recognizing = false;
+            console.log(err);
+            this.appendResults(err);
+        });
     }
 
     private appendResults(res: any) {
