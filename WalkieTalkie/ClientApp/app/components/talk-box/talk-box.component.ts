@@ -30,13 +30,13 @@ export class TalkBoxComponent {
             let formData = new FormData();
             formData.append("audioFile", data.blob);
 
-            // this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
-            //     console.log(res);
-            //     this.appendResults(res);
-            // }, err => {
-            //     console.log(err);
-            //     this.appendResults(err);
-            // });
+            this.http.post(this.baseUrl + 'api/Speech/ASR', formData).subscribe(res => {
+                console.log(res);
+                this.appendResults(res);
+            }, err => {
+                console.log(err);
+                this.appendResults(err);
+            });
         })
     }
 
