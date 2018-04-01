@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 
 namespace OxfordSpeechClient
 {
+    /// <summary>
+    /// There is a bug in the Disposer of the 'DataRecognitionClient' class.
+    /// Sometimes it will access a bad pointer and cause access violation error and exit the process.
+    /// Avoid calling the dispose each time when there is a user request.
+    /// Cache the clients and reuse them.
+    /// </summary>
     public class RecognitionClientManager : IDisposable
     {
         private SemaphoreSlim _waitingSignal;
