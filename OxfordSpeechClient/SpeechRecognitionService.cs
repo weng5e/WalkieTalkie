@@ -10,27 +10,29 @@ namespace OxfordSpeechClient
 {
     public sealed class SpeechRecognitionService : ISpeechRecognitionService
     {
-        private readonly CustomSpeechServiceOptions _options;
-        private readonly DataRecognitionClient _client;
+        private readonly RecognitionClientManager _clientManager;
 
         public SpeechRecognitionService(CustomSpeechServiceOptions options)
         {
-            _options = options;
-            _client = SpeechRecognitionServiceFactory.CreateDataClient(SpeechRecognitionMode.ShortPhrase,
-                                                                                 "en-us",
-                                                                                 _options.PrimaryKey,
-                                                                                 _options.SecondaryKey,
-                                                                                 _options.ServiceUrl);
-            _client.AuthenticationUri = _options.AuthenticationUrl;
+            _clientManager = new RecognitionClientManager(options);
         }
 
         public async Task<SpeechRecognitionResult> RecognizeSpeechAsync(Stream audioStream, CancellationToken token = default(CancellationToken))
         {
-            return await RecognitionSession.RecognizeSpeechAsync(_client, audioStream, token);
+            var client = await _clientManager.GetClientAsync();
+            try
+            {
+                return await RecognitionSession.RecognizeSpeechAsync(client, audioStream, token);
+            }
+            finally
+            {
+                _clientManager.ReleaseClient(client);
+            }
         }
 
         public void Dispose()
         {
+            _clientManager.Dispose();
         }
     }
 }
