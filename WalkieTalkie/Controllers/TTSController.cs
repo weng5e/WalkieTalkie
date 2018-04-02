@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Media;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TTSService;
 
@@ -29,12 +30,21 @@ namespace WalkieTalkie.Controllers
                 text = decoded;
             }
 
-            var audioStream = await _ttsService.GetAudioAsync("You Just said: " + text);
+            var cts = new CancellationTokenSource();
+            var workingTask = _ttsService.GetAudioAsync("You Just said: " + text, cts.Token);
+
+            var forgot = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(60));
+                if (workingTask.IsCompleted || workingTask.IsFaulted) return;
+                cts.Cancel();
+            });
+
+            var audioStream = await workingTask;
+            return File(audioStream, "audio/wav"); // FileStreamResult
 
             //SoundPlayer player = new SoundPlayer(audioStream);
             //player.Play();
-
-            return File(audioStream, "audio/wav"); // FileStreamResult
         }
 
         private static bool TryDecodeBase64(string input, out string output)
