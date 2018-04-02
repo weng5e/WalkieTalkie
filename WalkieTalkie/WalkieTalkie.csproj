@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OxfordSpeechClient\OxfordSpeechClient.csproj" />
+    <ProjectReference Include="..\TTSService\TTSService.csproj" />
   </ItemGroup>
 
   <Target Name="DebugRunWebpack" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('wwwroot\dist') ">

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OxfordSpeechClient;
+using TTSService;
 
 namespace WalkieTalkie
 {
@@ -27,6 +28,7 @@ namespace WalkieTalkie
         public void ConfigureServices(IServiceCollection services)
         {
             ConfigureSpeechRecognitionService(services);
+            ConfigureTTSService(services);
 
             services.AddMvc();
         }
@@ -68,6 +70,14 @@ namespace WalkieTalkie
             Configuration.GetSection("OxfordCredentials").Bind(options);
 
             services.AddSingleton<ISpeechRecognitionService>(new SpeechRecognitionService(options));
+        }
+
+        private void ConfigureTTSService(IServiceCollection services)
+        {
+            var options = new TTSServiceOptions();
+            Configuration.GetSection("TTSConfiguration").Bind(options);
+
+            services.AddSingleton<ITextToSpeechService>(new TextToSpeechService(options));
         }
 
     }
