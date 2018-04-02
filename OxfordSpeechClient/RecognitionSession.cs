@@ -13,6 +13,7 @@ namespace OxfordSpeechClient
     {
         private readonly DataRecognitionClient _client;
         private TaskCompletionSource<SpeechRecognitionResult> _tcs = new TaskCompletionSource<SpeechRecognitionResult>();
+        private readonly CancellationTokenSource _cancellationSource = new CancellationTokenSource();
 
 
         public static async Task<SpeechRecognitionResult> RecognizeSpeechAsync(DataRecognitionClient client, Stream audioStream, CancellationToken token = default(CancellationToken))
@@ -38,7 +39,9 @@ namespace OxfordSpeechClient
                     client.EndAudio();
                     var forgot = Task.Run(async () =>
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(60));
+                        var workingTask = session._tcs.Task;
+                        await Task.Delay(TimeSpan.FromSeconds(60), session._cancellationSource.Token);
+                        if (workingTask.IsCompleted || workingTask.IsFaulted) return;
                         session._tcs.TrySetException(new InvalidOperationException("Timed out."));
                     });
                 }
@@ -56,11 +59,13 @@ namespace OxfordSpeechClient
         private void OnResponseReceived(object sender, SpeechResponseEventArgs e)
         {
             _tcs.TrySetResult(SpeechRecognitionResult.FromCrisResult(e.PhraseResponse));
+            _cancellationSource.Cancel();
         }
 
         private void OnConversationError(object sender, SpeechErrorEventArgs e)
         {
             _tcs.TrySetException(new InvalidOperationException(e.SpeechErrorText));
+            _cancellationSource.Cancel();
         }
 
         private RecognitionSession(DataRecognitionClient client)
