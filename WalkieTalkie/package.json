@@ -57,6 +57,7 @@
     "typescript": "2.4.1",
     "url-loader": "0.5.9",
     "webpack": "2.5.1",
+    "webpack-cli": "^2.0.13",
     "webpack-hot-middleware": "2.18.2",
     "webpack-merge": "4.1.0",
     "enhanced-resolve": "^3.3.0",
