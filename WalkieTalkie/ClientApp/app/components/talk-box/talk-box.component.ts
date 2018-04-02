@@ -10,9 +10,9 @@ export class TalkBoxComponent {
     private audioHelper: AudioHelper;
     private http: Http;
     private baseUrl: string;
-    private results: string[] = [];
-    private recognizing: boolean = false;
 
+    public results: string[] = [];
+    public recognizing: boolean = false;
     public isTalking: boolean = false;
 
     @ViewChild('audioFileInput') audioFileInput: ElementRef;

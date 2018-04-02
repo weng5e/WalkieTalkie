@@ -29,7 +29,7 @@ namespace WalkieTalkie.Controllers
                 text = decoded;
             }
 
-            var audioStream = await _ttsService.GetAudioAsync(text);
+            var audioStream = await _ttsService.GetAudioAsync("You Just said: " + text);
 
             //SoundPlayer player = new SoundPlayer(audioStream);
             //player.Play();
