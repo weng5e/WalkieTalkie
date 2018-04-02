@@ -1,5 +1,5 @@
 import { Component, Inject, ViewChild, ElementRef } from '@angular/core';
-import { Http } from '@angular/http';
+import { Http, RequestOptionsArgs, ResponseContentType } from '@angular/http';
 import { AudioHelper } from "../../utilities/MediaDevice/AudioHelper";
 
 @Component({
@@ -23,10 +23,8 @@ export class TalkBoxComponent {
         this.audioHelper = new AudioHelper();
         this.audioHelper.setUp();
         this.audioHelper.recordsStream.subscribe((data: any) => {
-            const audio = new Audio();
-            audio.src = window.URL.createObjectURL(data.blob);
-            audio.load();
-            audio.play();
+
+
 
             this.postBlobToRecognize(data.blob);
         })
@@ -60,11 +58,40 @@ export class TalkBoxComponent {
             this.recognizing = false;
             console.log(res);
             this.appendResults(res);
+
+            // Read the response.
+            let jsonObj = res.json();
+            if (jsonObj && jsonObj.recognitionStatus && jsonObj.recognitionStatus === "RecognitionSuccess"
+                && jsonObj.results && jsonObj.results.length > 0) {
+                this.readText(jsonObj.results[0].displayText);
+            }
+
         }, err => {
             this.recognizing = false;
             console.log(err);
             this.appendResults(err);
         });
+    }
+
+    private readText(text: string) {
+        let options: RequestOptionsArgs = { responseType: ResponseContentType.Blob };
+        this.http.get(this.baseUrl + 'api/TTS/GetAudio?text=' + btoa(text), options).subscribe(res => {
+            // this.recognizing = false;
+            console.log(res);
+
+            const audio = new Audio();
+            audio.src = window.URL.createObjectURL(res.blob());
+            audio.load();
+            audio.play();
+
+        }, err => {
+            this.recognizing = false;
+            console.log(err);
+            this.appendResults(err);
+        });
+
+
+
     }
 
     private appendResults(res: any) {
